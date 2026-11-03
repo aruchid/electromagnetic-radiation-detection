@@ -8,7 +8,7 @@
 
 ## 输入契约
 
-一维等间隔采样检波信号。核心函数位于 `src/prototype.py` 的 `process`，可直接导入调用。默认命令运行固定种子合成样例，并在代码中断言预期效果；真实数据需由调用者按照函数形状约束传入。
+有限数值的一维等间隔采样检波信号，`window` 必须是信号长度以内的正奇数整数（不接受布尔值或浮点数）。核心函数位于 `src/prototype.py` 的 `process`，可直接导入调用。默认命令运行固定种子合成样例，并在代码中断言预期效果；真实数据需由调用者按照函数形状约束传入。
 
 ## 快速运行
 
@@ -21,6 +21,8 @@ pip install -r requirements.txt
 python src/prototype.py --output artifacts
 python -m unittest discover -s tests -v
 ```
+
+移动平均在归一化尺度上计算，避免接近 float64 上限的有限输入因累加舍入而溢出；回归测试覆盖正负极值、极小幅值和不同信号单位。此处理不增加射频硬件检波能力。
 
 ## 输出与验证
 

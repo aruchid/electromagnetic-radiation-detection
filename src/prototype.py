@@ -9,10 +9,19 @@ def finite(a,ndim=None):
  return a
 def process(samples,window=9):
  samples=finite(samples,1)
- if window<1 or window%2!=1 or window>len(samples): raise ValueError('window must be odd and within signal length')
+ if isinstance(window,(bool,np.bool_)) or not isinstance(window,(int,np.integer)):
+  raise ValueError('window must be an odd integer within signal length')
+ window=int(window)
+ if window<1 or window%2!=1 or window>len(samples): raise ValueError('window must be an odd integer within signal length')
  padded=np.pad(samples,window//2,mode='reflect')
  median=np.median(np.lib.stride_tricks.sliding_window_view(padded,window),axis=1)
- return np.convolve(np.pad(median,window//2,mode='edge'),np.ones(window)/window,mode='valid')
+ # Average in a bounded scale: finite inputs near float64 max can overflow
+ # during convolution even though their mathematical average is finite.
+ scale=np.max(np.abs(median))
+ if scale==0: return median.copy()
+ smoothed=np.convolve(np.pad(median/scale,window//2,mode='edge'),np.ones(window)/window,mode='valid')
+ # Roundoff may exceed the normalized input bounds by a few ulps.
+ return np.clip(smoothed,-1.,1.)*scale
 
 def demo():
  rng=np.random.default_rng(42);x=np.linspace(0,6,600);truth=1+.3*np.sin(x*2);raw=truth+rng.normal(0,.1,len(x));raw[::67]+=1.5
